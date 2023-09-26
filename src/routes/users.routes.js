@@ -10,4 +10,4 @@ const usersController = new UsersController();
 
 usersRoutes.post("/", usersController.create)
 
-module.exports = usersRoutess
+module.exports = usersRoutes
