@@ -1,4 +1,4 @@
-const { hash } = require("bcryptjs");
+const { hash, compare } = require("bcryptjs");
 const AppError = require("../utils/AppError");
 const sqliteConnection = require("../database/sqlite");
 
@@ -26,12 +26,12 @@ class UsersController {
   }
 
   async update(request, response) {
-    const { name, email } = request.body;
+    const { name, email, password, old_password } = request.body;
     const { id } = request.params;
 
     const database = await sqliteConnection();
     //Funçãp pra buscar usuário 
-    const user = await database.get("SELECT * FROM users WHERE id = (?)", [id] )
+    const user = await database.get("SELECT * FROM users WHERE id = (?)", [id])
 
     //Verificar se o usuário existe
     if (!user) {
@@ -41,25 +41,45 @@ class UsersController {
     //Verificar se ele quer mudar pra outro email que ja existe
     const userWithUpdatedEmail = await database.get("SELECT * FROM users WHERE email = (?)", [email])
 
-    if(userWithUpdatedEmail && userWithUpdatedEmail.id !== user.id){
+    if (userWithUpdatedEmail && userWithUpdatedEmail.id !== user.id) {
       throw new AppError("Este e-mail já esta em uso.")
     }
 
-      user.name = name;
-      user.email = email; 
+    user.name = name;
+    user.email = email;
 
-      await database.run(`
+    //Verifica se vc colocou a senha antiga pra poder mudar de senha
+    if (password && !old_password) {
+      throw new AppError("Você precisa informar a senha antiga pra definir a nova senha")
+    }
+
+    //Verificar se a senha antiga é igual a senha que o usuário forneceu 
+    if (password && old_password) {
+      const checkOldPassword = await compare(old_password, user.password)
+
+      if (!checkOldPassword) {
+        throw new AppError("A senha antiga não confere.")
+      }
+
+      //Se a senha é igual deixa atualizar
+      user.password = await hash(password, 8)
+    }
+
+
+    //Atualização no registro de usuário com o ID especificado
+    await database.run(`
         UPDATE users SET
         name = ?,
         email = ?,
+        password = ?,
         updated_at = ?
         WHERE ID = ?`,
-        [user.name, user.email, new Date(), id]
-      );
+      [user.name, user.email, user.password, new Date(), id]
+    );
 
-      return response.json()
-    
-    
+    return response.json()
+
+
   }
 }
 
