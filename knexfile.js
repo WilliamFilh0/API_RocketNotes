@@ -6,6 +6,9 @@ module.exports = {
     connection: {
       filename: path.resolve(__dirname, "src", "database", "database.db")
     },
+    migrations: {
+      directory: path.resolve(__dirname, "src", "database", "Knex", "migrations")
+    },
     useNullAsDefault: true
   }
 };
