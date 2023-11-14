@@ -31,7 +31,7 @@ class NotesController {
 
     await knex("tags").insert(tagsInsert);
 
-    response.json();
+    return response.json();
   }
 
   //Busca e retorna os detalhes de uma nota com suas tags e links associados.
@@ -78,8 +78,8 @@ class NotesController {
         .whereIn("name", filterTags)
         .innerJoin("notes", "notes.id", "tags.note_id")
         .orderBy("notes.title")
-    
-    //Consulta  banco para encontrar notas que correspondam com o ID do usuário e o título
+
+      //Consulta  banco para encontrar notas que correspondam com o ID do usuário e o título
     } else {
       notes = await knex("notes")
         .where({ user_id })
